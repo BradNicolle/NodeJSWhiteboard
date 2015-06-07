@@ -22,7 +22,6 @@ io.on('connection', function(socket) {
 
 	var userColour = colours[user_counter % colours.length];
 	console.log('User given: ' + userColour);
-	socket.emit('colour', userColour);
 	socket.emit('init', data);
 
 	num_users++;
