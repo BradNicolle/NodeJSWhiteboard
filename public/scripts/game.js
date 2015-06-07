@@ -5,6 +5,7 @@ var ctx;
 var colour = "black";
 
 var down = false;
+var prevX, prevY;
 
 var userMap = {};
 
@@ -94,6 +95,8 @@ function downHandler(e) {
 		x = e.pageX;
 		y = e.pageY;
 	}
+	prevX = x;
+	prevY = y;
 	ctx.moveTo(x, y);
 	down = true;
 	e.preventDefault();
@@ -118,10 +121,14 @@ function moveHandler(e) {
 		y = e.pageY;
 	}
 	if (down) {
+			// Necessary to move context in case someone else is drawing at same time as us
+			ctx.moveTo(prevX, prevY);
 			ctx.lineTo(x, y);
 			ctx.stroke();
 
 			var jsonData = {x: x, y: y};
+			prevX = x;
+			prevY = y;
 
 			socket.emit('move', jsonData);
 	}
