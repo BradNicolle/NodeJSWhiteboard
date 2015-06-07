@@ -2,6 +2,7 @@ var socket = io();
 
 var canvas;
 var ctx;
+var colour = "black";
 
 var down = false;
 
@@ -17,6 +18,10 @@ function onLoad() {
 
 //	ctx.moveTo(0, 0);
 
+	socket.on('colour', function(msg) {
+		colour = msg;
+	});
+
 	socket.on('init', function(msg) {
 		ctx.beginPath();
 		for (i in msg) {
@@ -31,6 +36,8 @@ function onLoad() {
 	});
 
 	socket.on('move', pathMove);
+
+	socket.on('clear', clearBoard);
 
 	socket.on('users', function(msg) {
 		document.getElementById("counter_text").innerText = msg;
@@ -63,6 +70,17 @@ function pathRelease(msg) {
 	if (msg.id in userMap) {
 		userMap[msg.id] = null;
 	}
+}
+
+function clearHandler() {
+	clearBoard();
+	socket.emit('clear');
+}
+
+function clearBoard() {
+	ctx.clearRect(0, 0, canvas.width, canvas.height);
+	userMap = {};
+	ctx.beginPath();
 }
 
 function downHandler(e) {

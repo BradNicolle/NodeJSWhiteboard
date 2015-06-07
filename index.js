@@ -3,8 +3,10 @@ var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 
-var num_users = 0;
+var colours = ['blue', 'red', 'green', 'yellow', 'orange', 'purple', 'black'];
 
+var num_users = 0;
+var user_counter = 0;
 var data = [];
 
 app.set('port', (process.env.PORT || 5000));
@@ -12,15 +14,19 @@ app.set('port', (process.env.PORT || 5000));
 app.use(express.static('public'));
 
 app.get('/', function(request, response) {
-  response.sendFile(__dirname + '/index.html')
+  response.sendFile(__dirname + '/index.html');
 });
 
 io.on('connection', function(socket) {
 	console.log('a user connected');
 
+	var userColour = colours[user_counter % colours.length];
+	console.log('User given: ' + userColour);
+	socket.emit('colour', userColour);
 	socket.emit('init', data);
 
 	num_users++;
+	user_counter++;
 	updateUsers();
 
 	socket.on('move', function(msg) {
@@ -36,6 +42,11 @@ io.on('connection', function(socket) {
 		data.push(jsonData);
 		socket.broadcast.emit('release', jsonData);
 	});
+
+	socket.on('clear', function(msg) {
+		data.length = 0;
+		socket.broadcast.emit('clear');
+	})
 
 	socket.on('disconnect', function() {
 		console.log('a user disconnected');
