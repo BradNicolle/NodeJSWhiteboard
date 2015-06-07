@@ -1,16 +1,19 @@
+var socket = io();
+
+var canvas;
+var ctx;
+
 var down = false;
 
 var userMap = {};
 
 function onLoad() {
 
-	var socket = io();
-
-	var canvas = document.getElementById("theCanvas");
+	canvas = document.getElementById("theCanvas");
 	canvas.width = window.innerWidth;
 	canvas.height = window.innerHeight;
 
-	var ctx = canvas.getContext("2d");
+	ctx = canvas.getContext("2d");
 
 //	ctx.moveTo(0, 0);
 
@@ -38,23 +41,53 @@ function onLoad() {
 		}
 	});
 
-	addEventListener("mousedown", function(e) {
-		ctx.moveTo(e.pageX, e.pageY)
-		down = true;
-	}, false);
+	addEventListener("mousedown", downHandler, true);
+	addEventListener("touchstart", downHandler, true);
+	addEventListener("mouseup", upHandler, true);
+	addEventListener("touchend", upHandler, true);
+	addEventListener("mousemove", moveHandler, true);
+	addEventListener("touchmove", moveHandler, true);
+}
 
-	addEventListener("mouseup", function(e) {
-		down = false;
-		socket.emit('release');
-	}, false);
+function downHandler(e) {
+	document.getElementById("eventBox").innerText = "down " + e.type;
+	var x, y;
+	if (e.type == "touchstart") {
+		x = e.changedTouches[0].pageX;
+		y = e.changedTouches[0].pageY;
+	}
+	else {
+		x = e.pageX;
+		y = e.pageY;
+	}
+	ctx.moveTo(x, y);
+	down = true;
+	e.preventDefault();
+}
 
-	addEventListener("mousemove", function(e) {
-		if (down) {
-			ctx.lineTo(e.pageX, e.pageY);
+function upHandler(e) {
+	document.getElementById("eventBox").innerText = "up " + e.type;
+	down = false;
+	socket.emit('release');
+	e.preventDefault();
+}
+
+function moveHandler(e) {
+	document.getElementById("eventBox").innerText = "move " + e.type;
+	var x, y;
+	if (e.type == "touchmove") {
+		x = e.changedTouches[0].pageX;
+		y = e.changedTouches[0].pageY;
+	}
+	else {
+		x = e.pageX;
+		y = e.pageY;
+	}
+	if (down) {
+			ctx.lineTo(x, y);
 			ctx.stroke();
 
-			socket.emit('move', '{"x":' + e.pageX + ',"y":' + e.pageY + '}');
-		}
-	}, false);
-
+			socket.emit('move', '{"x":' + x + ',"y":' + y + '}');
+	}
+	e.preventDefault();
 }
