@@ -5,6 +5,8 @@ var io = require('socket.io')(http);
 
 var num_users = 0;
 
+var data = [];
+
 app.set('port', (process.env.PORT || 5000));
 
 app.use(express.static('public'));
@@ -15,18 +17,24 @@ app.get('/', function(request, response) {
 
 io.on('connection', function(socket) {
 	console.log('a user connected');
+
+	socket.emit('init', data);
+
 	num_users++;
 	updateUsers();
 
 	socket.on('move', function(msg) {
 		console.log(msg);
-		var parsed = JSON.parse(msg);
-		socket.broadcast.emit('move', '{"id":"' + socket.id + '","x":' + parsed.x + ',"y":' + parsed.y + '}');
+		var jsonData = {id: socket.id, x: msg.x, y: msg.y, released: false};
+		data.push(jsonData);
+		socket.broadcast.emit('move', jsonData);
 	});
 
 	socket.on('release', function(msg) {
 		console.log(socket.id + " released");
-		socket.broadcast.emit('release', socket.id);
+		var jsonData = {id: socket.id, released: true};
+		data.push(jsonData);
+		socket.broadcast.emit('release', jsonData);
 	});
 
 	socket.on('disconnect', function() {

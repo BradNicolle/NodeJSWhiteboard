@@ -17,29 +17,26 @@ function onLoad() {
 
 //	ctx.moveTo(0, 0);
 
-	socket.on('move', function(msg) {
-		var parsed = JSON.parse(msg);
-		if (userMap[parsed.id] == null) {
-			ctx.beginPath();
+	socket.on('init', function(msg) {
+		ctx.beginPath();
+		for (i in msg) {
+			console.log("=== " + msg[i].x + " " + msg[i].y + " " + msg[i].released);
+			if (msg[i].released) {
+				pathRelease(msg[i]);
+			}
+			else {
+				pathMove(msg[i]);
+			}
 		}
-		else {
-			var user = userMap[parsed.id];
-			ctx.moveTo(user.x, user.y);
-		}
-		userMap[parsed.id] = parsed;
-		ctx.lineTo(parsed.x, parsed.y);
-		ctx.stroke();
 	});
+
+	socket.on('move', pathMove);
 
 	socket.on('users', function(msg) {
 		document.getElementById("counter_text").innerText = msg;
 	});
 
-	socket.on('release', function(msg) {
-		if (msg in userMap) {
-			userMap[msg] = null;
-		}
-	});
+	socket.on('release', pathRelease);
 
 	addEventListener("mousedown", downHandler, true);
 	addEventListener("touchstart", downHandler, true);
@@ -49,8 +46,27 @@ function onLoad() {
 	addEventListener("touchmove", moveHandler, true);
 }
 
+function pathMove(msg) {
+	if (userMap[msg.id] == null) {
+		ctx.beginPath();
+	}
+	else {
+		var user = userMap[msg.id];
+		ctx.moveTo(user.x, user.y);
+	}
+	userMap[msg.id] = msg;
+	ctx.lineTo(msg.x, msg.y);
+	ctx.stroke();
+}
+
+function pathRelease(msg) {
+	if (msg.id in userMap) {
+		userMap[msg.id] = null;
+	}
+}
+
 function downHandler(e) {
-	document.getElementById("eventBox").innerText = "down " + e.type;
+//	document.getElementById("eventBox").innerText = "down " + e.type;
 	var x, y;
 	if (e.type == "touchstart") {
 		x = e.changedTouches[0].pageX;
@@ -66,14 +82,14 @@ function downHandler(e) {
 }
 
 function upHandler(e) {
-	document.getElementById("eventBox").innerText = "up " + e.type;
+//	document.getElementById("eventBox").innerText = "up " + e.type;
 	down = false;
 	socket.emit('release');
 	e.preventDefault();
 }
 
 function moveHandler(e) {
-	document.getElementById("eventBox").innerText = "move " + e.type;
+//	document.getElementById("eventBox").innerText = "move " + e.type;
 	var x, y;
 	if (e.type == "touchmove") {
 		x = e.changedTouches[0].pageX;
@@ -87,7 +103,9 @@ function moveHandler(e) {
 			ctx.lineTo(x, y);
 			ctx.stroke();
 
-			socket.emit('move', '{"x":' + x + ',"y":' + y + '}');
+			var jsonData = {x: x, y: y};
+
+			socket.emit('move', jsonData);
 	}
 	e.preventDefault();
 }
